@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Users — AutoMod</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0d0f14; --surface:#13161e; --card:#1a1d28; --border:#2a2d3e;
+      --accent:#5865f2; --accent2:#eb459e; --green:#57f287; --red:#ed4245; --yellow:#fee75c;
+      --text:#e3e5f0; --muted:#72767d;
+    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; padding:2rem; }
+    .wrap { max-width:900px; margin:0 auto; }
+    .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; }
+    .logo { font-family:'Space Mono',monospace; font-size:1.3rem; color:var(--accent); font-weight:700; }
+    .logo span { color:var(--accent2); }
+    a.back { color:var(--muted); text-decoration:none; font-size:0.9rem; }
+    a.back:hover { color:var(--accent); }
+    h1 { font-size:1.4rem; margin-bottom:1rem; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:0.7rem 0.6rem; border-bottom:1px solid var(--border); font-size:0.9rem; }
+    th { color:var(--muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; }
+    .badge { display:inline-block; padding:0.2rem 0.55rem; border-radius:999px; font-size:0.7rem; font-weight:600; }
+    .b-admin  { background:rgba(235,69,158,0.15); color:var(--accent2); border:1px solid var(--accent2); }
+    .b-edit   { background:rgba(87,242,135,0.15); color:var(--green);   border:1px solid var(--green); }
+    .b-view   { background:rgba(114,118,125,0.15); color:var(--muted);  border:1px solid var(--muted); }
+    .btn { display:inline-block; padding:0.35rem 0.7rem; border-radius:6px; text-decoration:none; font-size:0.78rem; margin-right:0.3rem; font-weight:600; }
+    .btn-grant  { background:var(--green); color:#0d0f14; }
+    .btn-revoke { background:var(--yellow); color:#0d0f14; }
+    .btn-admin  { background:var(--accent2); color:white; }
+    .btn-del    { background:var(--red); color:white; }
+    .me { color:var(--accent); font-weight:600; }
+    .empty { color:var(--muted); padding:1rem; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="logo">Auto<span>Mod</span> · Users</div>
+      <a class="back" href="{{ url_for('index') }}">← Back to dashboard</a>
+    </div>
+    <div class="card">
+      <h1>Manage users</h1>
+      <p style="color:var(--muted); font-size:0.85rem; margin-bottom:1rem;">
+        Grant edit access so a user can change banned words, settings, and reset strikes. View-only users can only see the dashboard.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {% for uname, u in users.items() %}
+          <tr>
+            <td>
+              {{ uname }}
+              {% if current_user and uname == current_user.username %}<span class="me">(you)</span>{% endif %}
+            </td>
+            <td>
+              {% if u.is_admin %}<span class="badge b-admin">ADMIN</span>
+              {% elif u.can_edit %}<span class="badge b-edit">CAN EDIT</span>
+              {% else %}<span class="badge b-view">VIEW ONLY</span>{% endif %}
+            </td>
+            <td style="color:var(--muted); font-size:0.8rem;">{{ u.created_at or '—' }}</td>
+            <td>
+              {% if not u.is_admin %}
+                {% if u.can_edit %}
+                  <a class="btn btn-revoke" href="{{ url_for('toggle_edit', username=uname) }}">Revoke edit</a>
+                {% else %}
+                  <a class="btn btn-grant" href="{{ url_for('toggle_edit', username=uname) }}">Grant edit</a>
+                {% endif %}
+                <a class="btn btn-admin" href="{{ url_for('make_admin', username=uname) }}"
+                   onclick="return confirm('Make {{ uname }} an admin? Admins can manage all users.')">Make admin</a>
+                <a class="btn btn-del" href="{{ url_for('delete_user', username=uname) }}"
+                   onclick="return confirm('Delete user {{ uname }}?')">Delete</a>
+              {% else %}
+                <span style="color:var(--muted); font-size:0.8rem;">—</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="empty">No users yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
